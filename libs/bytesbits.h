@@ -323,7 +323,7 @@ namespace IMD
             return (static_cast<int>(ptr[byte_ind]) >> bit_ind_in_byte) & 1;
         }
 
-        // RESTORE METHODS
+        // RESTORING METHODS
 
         template <typename T, typename InputIt>
         T restore_value_from_bytes(InputIt beg, InputIt end)
@@ -372,6 +372,9 @@ namespace IMD
             return res;
         }
     }
+
+    // METHODS OF BITS NUMBER
+
     template <typename T>
     bool all_bits_one(const T &val)
     {
@@ -447,6 +450,8 @@ namespace IMD
         return bits_number<T>() - zero_bit_number(val);
     }
 
+    // REVERSING METHODS
+
     template <typename T>
     void reverse_bytes(T &val)
     {
@@ -455,7 +460,6 @@ namespace IMD
         for (size_t i(0); i < bytes / 2; ++i)
             std::swap(ptr[i], ptr[bytes - 1 - i]);
     }
-
     template <typename T>
     void reverse_bits(T &val)
     {
@@ -473,6 +477,9 @@ namespace IMD
 
         reverse_bytes(val);
     }
+
+    // ROTATING METHODS
+
     template <typename T>
     constexpr T rotate_left(const T &val, size_t shift)
     {
@@ -503,6 +510,33 @@ namespace IMD
             return val;
 
         return (val >> shift) | (val << (bits - shift));
+    }
+    template <typename T>
+    constexpr T rotate_carry_left(const T &val, bool carry_in, bool &carry_out)
+    {
+        if constexpr (std::is_signed_v<T>)
+            if (val < 0)
+                throw std::invalid_argument("The val must be non-negative for signed types");
+
+        constexpr size_t bits = bits_number<T>();
+
+        carry_out = (val >> (bits - 1)) & 1;
+
+        return (val << 1) | (carry_in ? 1 : 0);
+    }
+
+    template <typename T>
+    constexpr T rotate_carry_right(const T &val, bool carry_in, bool &carry_out)
+    {
+        if constexpr (std::is_signed_v<T>)
+            if (val < 0)
+                throw std::invalid_argument("The val must be non-negative for signed types");
+
+        constexpr size_t bits = bits_number<T>();
+
+        carry_out = val & 1;
+
+        return (val >> 1) | (carry_in ? (1 << (bits - 1)) : 0);
     }
 }
 

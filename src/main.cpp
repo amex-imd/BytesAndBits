@@ -8,9 +8,18 @@ int main()
 
     IMD::BIG_ENDIAN::print_bin_bytes(val);
     std::cout << std::endl;
+    bool sign = 0;
 
-    IMD::BIG_ENDIAN::print_bin_bytes(IMD::rotate_left(val, 9));
-    std::cout << std::endl;
+    for (int i = 0; i < 6; ++i)
+    {
+        val = IMD::rotate_carry_left(val, 0, sign);
+        IMD::BIG_ENDIAN::print_bin_bytes(val);
+        std::cout << std::endl;
+    }
+
+    IMD::BIG_ENDIAN::print_bin_bytes(IMD::rotate_carry_left(val, 0, sign));
+    std::cout << std::endl
+              << sign << std::endl;
 
     std::cin.get();
 
