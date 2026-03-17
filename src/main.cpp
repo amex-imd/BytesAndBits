@@ -1,7 +1,9 @@
 #include <iostream>
+#include <bytesbits.h>
 
 int main()
 {
-    std::cout << "Hello, world!" << std::endl;
+    IMD::print_info<int>();
+    std::cin.get();
     return 0;
 }

@@ -10,6 +10,7 @@
                     "-I", "${workspaceFolder}/libs" ,
                     "-o", "${workspaceFolder}/build/program.exe"],
             "group": {
+                "isDefault": true,
                 "kind": "build"
             }
         }
