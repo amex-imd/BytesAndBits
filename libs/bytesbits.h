@@ -372,7 +372,59 @@ namespace IMD
             return res;
         }
     }
+    template <typename T>
+    bool all_bits_one(const T &val)
+    {
+        auto ptr = reinterpret_cast<const std::byte *>(&val);
+        auto max = std::byte((1 << BITS_PER_BYTE) - 1);
+        size_t L = bytes_number<T>();
 
+        for (size_t i(0); i < L; ++i)
+            if (ptr[i] != max)
+                return false;
+        return true;
+    }
+    template <typename T>
+    bool all_bits_zero(const T &val)
+    {
+        auto ptr = reinterpret_cast<const std::byte *>(&val);
+        size_t bytes = bytes_number<T>();
+
+        for (size_t i(0); i < bytes; ++i)
+            if (ptr[i] != std::byte(0))
+                return false;
+        return true;
+    }
+    template <typename T>
+    bool any_bits_zero(const T &val)
+    {
+        return !all_bits_one(val);
+    }
+
+    template <typename T>
+    bool any_bits_one(const T &val)
+    {
+        return !all_bits_zero(val);
+    }
+
+    template <typename T>
+    void fill_one_bit(T &val)
+    {
+        auto ptr = reinterpret_cast<std::byte *>(&val);
+        size_t bytes = byte_amount<T>();
+        std::byte max = std::byte((1 << BITS_PER_BYTE) - 1);
+
+        std::fill(ptr, ptr + bytes, max);
+    }
+
+    template <typename T>
+    void fill_zero_bit(T &val)
+    {
+        auto ptr = reinterpret_cast<std::byte *>(&val);
+        size_t bytes = byte_amount<T>();
+
+        std::fill(ptr, ptr + bytes, std::byte(0));
+    }
 }
 
 #endif
