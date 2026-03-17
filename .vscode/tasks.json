@@ -1,0 +1,17 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Cpp Project Assembly",
+            "type": "shell",
+            "command": "g++",
+            "args": ["-std=c++17",
+                    "-g", "${workspaceFolder}/src/*.cpp",
+                    "-I", "${workspaceFolder}/libs" ,
+                    "-o", "${workspaceFolder}/build/program.exe"],
+            "group": {
+                "kind": "build"
+            }
+        }
+    ]
+}
