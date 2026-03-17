@@ -429,7 +429,7 @@ namespace IMD
     template <typename T>
     size_t zero_bit_number(const T &val)
     {
-        auto ptr = reinterpret_cast<const byte *>(&val);
+        auto ptr = reinterpret_cast<const std::byte *>(&val);
         size_t res(0);
         size_t bytes = bytes_number<T>();
 
@@ -447,6 +447,63 @@ namespace IMD
         return bits_number<T>() - zero_bit_number(val);
     }
 
+    template <typename T>
+    void reverse_bytes(T &val)
+    {
+        auto ptr = reinterpret_cast<std::byte *>(&val);
+        size_t bytes = bytes_number<T>();
+        for (size_t i(0); i < bytes / 2; ++i)
+            std::swap(ptr[i], ptr[bytes - 1 - i]);
+    }
+
+    template <typename T>
+    void reverse_bits(T &val)
+    {
+        auto ptr = reinterpret_cast<std::byte *>(&val);
+        size_t bytes = bytes_number<T>();
+
+        for (size_t i(0); i < bytes; ++i)
+        {
+            unsigned char byte = static_cast<unsigned char>(ptr[i]);
+            unsigned char reversed_byte = 0;
+            for (size_t j(0); j < BITS_PER_BYTE; ++j)
+                reversed_byte |= ((byte >> j) & 1) << (BITS_PER_BYTE - 1 - j);
+            ptr[i] = static_cast<std::byte>(reversed_byte);
+        }
+
+        reverse_bytes(val);
+    }
+    template <typename T>
+    constexpr T rotate_left(const T &val, size_t shift)
+    {
+        if constexpr (std::is_signed_v<T>)
+            if (val < 0)
+                throw std::invalid_argument("The val must be non-negative for signed types");
+
+        size_t bits = bits_number<T>();
+        shift %= bits;
+
+        if (shift == 0)
+            return val;
+
+        return (val << shift) | (val >> (bits - shift));
+    }
+
+    template <typename T>
+    constexpr T rotate_right(const T &val, size_t shift)
+    {
+        if constexpr (std::is_signed_v<T>)
+            if (val < 0)
+                throw std::invalid_argument("The val must be non-negative for signed types");
+
+        size_t bits = bits_number<T>();
+        shift %= bits;
+
+        if (shift == 0)
+            return val;
+
+        return (val >> shift) | (val << (bits - shift));
+    }
 }
 
 #endif
