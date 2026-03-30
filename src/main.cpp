@@ -4,10 +4,17 @@
 
 int main()
 {
-    std::vector<int> v1{1, 0, 1, 0, 1};
-    std::vector<int> v2{1, 0, 0, 1, 1};
+    short val = 314;
+    IMD::BIG_ENDIAN::print_bits(val);
 
-    std::cout << IMD::ECC::Haming_distance(v1, v2);
+    auto v = IMD::ECC::add_parity_bit(val);
+    for (auto x : v)
+        std::cout << x << " ";
+    std::cout << std::endl;
+    size_t size = v.size();
+    v[size - 1] = 0;
+
+    std::cout << IMD::ECC::check_parity_bit(v);
 
     std::cin.get();
 
