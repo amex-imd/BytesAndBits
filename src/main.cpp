@@ -4,22 +4,10 @@
 
 int main()
 {
-    short val = 316;
+    std::vector<int> v1{1, 0, 1, 0, 1};
+    std::vector<int> v2{1, 0, 0, 1, 1};
 
-    IMD::BIG_ENDIAN::print_bin_bytes(val);
-    std::cout << std::endl;
-    bool sign = 0;
-
-    for (int i = 0; i < 6; ++i)
-    {
-        val = IMD::rotate_carry_left(val, 0, sign);
-        IMD::BIG_ENDIAN::print_bin_bytes(val);
-        std::cout << std::endl;
-    }
-
-    IMD::BIG_ENDIAN::print_bin_bytes(IMD::rotate_carry_left(val, 0, sign));
-    std::cout << std::endl
-              << sign << std::endl;
+    std::cout << IMD::ECC::Haming_distance(v1, v2);
 
     std::cin.get();
 

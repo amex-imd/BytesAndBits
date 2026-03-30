@@ -4,6 +4,8 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <array>
+#include <numeric>
 
 namespace IMD
 {
@@ -538,6 +540,74 @@ namespace IMD
 
         return (val >> 1) | (carry_in ? (1 << (bits - 1)) : 0);
     }
+
+    namespace ECC
+    {
+        template <typename T>
+        struct ECCResult
+        {
+            T data; // Исходные или исправленные данные
+            bool error_detected;
+            bool error_corrected;
+            size_t errors_number;
+        };
+        enum class ParityType
+        {
+            EVEN,
+            ODD
+        };
+
+        template <typename Container>
+        size_t Haming_distance(const Container &c1, const Container &c2)
+        {
+            if (c1.size() != c2.size())
+                throw std::invalid_argument("The containters must have the same size");
+
+            size_t res(0);
+            auto cit1 = c1.begin();
+            auto cit2 = c2.begin();
+            while (cit1 != c1.end())
+            {
+                if (*cit1 != *cit2)
+                    ++res;
+
+                ++cit1;
+                ++cit2;
+            }
+
+            return res;
+        }
+        template <typename Container>
+        size_t min_code_distance(const Container &codespace)
+        {
+            if (codespace.size() < 2)
+                return 0;
+
+            size_t res = std::numeric_limits<size_t>::max();
+
+            for (auto it1 = codespace.begin(); it1 != codespace.end(); ++it1)
+            {
+                for (auto it2 = std::next(it1); it2 != codespace.end(); ++it2)
+                {
+                    size_t tmp = Haming_distance(*it1, *it2);
+                    if (tmp < res)
+                        res = tmp;
+                }
+            }
+
+            return res;
+        }
+
+        inline bool can_detect_errors(size_t d, size_t g)
+        {
+            return d >= g + 1;
+        }
+        inline bool can_correct_errors(size_t d, size_t g)
+        {
+            return d >= 2 * g + 1;
+        }
+
+        }
 }
 
 #endif
