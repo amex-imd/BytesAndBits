@@ -4,9 +4,9 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
-#include <array>
 #include <numeric>
 #include <vector>
+#include <tuple>
 
 namespace IMD
 {
@@ -37,9 +37,9 @@ namespace IMD
         // --------Print methods--------
 
         template <typename T>
-        void print_bits(const T &val, const char *sep = " ", std::ostream &os = std::cout)
+        void print_bits(const T &data, const char *sep = " ", std::ostream &os = std::cout)
         {
-            auto ptr = reinterpret_cast<const std::byte *>(&val);
+            auto ptr = reinterpret_cast<const std::byte *>(&data);
             auto bytes = bytes_number<T>();
 
             for (size_t i(bytes); i-- > 0;)
@@ -51,9 +51,9 @@ namespace IMD
         }
 
         template <typename T>
-        void print_bin_bytes(const T &val, const char *sep = " ", std::ostream &os = std::cout)
+        void print_bin_bytes(const T &data, const char *sep = " ", std::ostream &os = std::cout)
         {
-            auto ptr = reinterpret_cast<const std::byte *>(&val);
+            auto ptr = reinterpret_cast<const std::byte *>(&data);
             auto bytes = bytes_number<T>();
 
             for (size_t i(bytes); i-- > 0;)
@@ -67,9 +67,9 @@ namespace IMD
         }
 
         template <typename T>
-        void print_oct_bytes(const T &val, const char *sep = " ", std::ostream &os = std::cout)
+        void print_oct_bytes(const T &data, const char *sep = " ", std::ostream &os = std::cout)
         {
-            auto ptr = reinterpret_cast<const std::byte *>(&val);
+            auto ptr = reinterpret_cast<const std::byte *>(&data);
             auto bytes = bytes_number<T>();
 
             for (size_t i(bytes); i-- > 0;)
@@ -120,8 +120,8 @@ namespace IMD
 
             auto ptr = reinterpret_cast<std::byte *>(&val);
 
-            size_t byte_ind = bytes_number<T>() - 1 - bit_ind / BITS_PER_BYTE;
-            size_t bit_ind_in_byte = BITS_PER_BYTE - 1 - bit_ind % BITS_PER_BYTE;
+            size_t byte_ind(bytes_number<T>() - 1 - bit_ind / BITS_PER_BYTE);
+            size_t bit_ind_in_byte(BITS_PER_BYTE - 1 - bit_ind % BITS_PER_BYTE);
 
             unsigned char byte_val = static_cast<unsigned char>(ptr[byte_ind]);
 
@@ -151,7 +151,7 @@ namespace IMD
 
             auto ptr = reinterpret_cast<const std::byte *>(&val);
             size_t byte_ind = bytes_number<T>() - 1 - (bit_ind / BITS_PER_BYTE);
-            size_t bit_ind_in_byte = bit_ind % BITS_PER_BYTE;
+            size_t bit_ind_in_byte(BITS_PER_BYTE - 1 - bit_ind % BITS_PER_BYTE);
 
             return (static_cast<int>(ptr[byte_ind]) >> bit_ind_in_byte) & 1;
         }
@@ -184,8 +184,8 @@ namespace IMD
                 throw std::runtime_error("The number of bits does not match the size of type T");
 
             T res = 0;
-            size_t bit_ind = 0;
-            size_t total_bits = bits_number<T>();
+            size_t bit_ind(0);
+            size_t total_bits(bits_number<T>());
 
             while (beg != end)
             {
@@ -352,7 +352,7 @@ namespace IMD
 
             auto ptr = reinterpret_cast<const std::byte *>(&val);
             size_t byte_ind = bit_ind / BITS_PER_BYTE;
-            size_t bit_ind_in_byte = bit_ind % BITS_PER_BYTE;
+            size_t bit_ind_in_byte = BITS_PER_BYTE - 1 - bit_ind % BITS_PER_BYTE;
 
             return (static_cast<int>(ptr[byte_ind]) >> bit_ind_in_byte) & 1;
         }
@@ -655,6 +655,15 @@ namespace IMD
             return d >= 2 * g + 1;
         }
 
+        template <typename T>
+        struct ECCResult
+        {
+            T data;
+            bool error_detected;
+            bool error_corrected;
+            size_t errors_number;
+        };
+
         // --------Parity bit encode--------
 
         enum class ParityType
@@ -663,12 +672,13 @@ namespace IMD
             ODD
         };
         template <typename T>
-        std::vector<bool> add_parity_bit(const T &data, ParityType parity_type = ParityType::EVEN)
+        std::vector<bool> parity_bit_encode(const T &data, ParityType parity_type = ParityType::EVEN)
         {
             std::vector<bool> res = IMD::BIG_ENDIAN::to_bit_vector(data); // It always works with the order called "BIG ENDIAN"
 
             size_t ones = one_bit_number(data);
             bool parity_bit;
+
             if (parity_type == ParityType::EVEN)
                 parity_bit = (ones % 2 == 1);
             else
@@ -678,10 +688,18 @@ namespace IMD
 
             return res;
         }
-        bool check_parity_bit(const std::vector<bool> &codeword, ParityType parity_type = ParityType::EVEN)
+        template <typename T>
+        ECCResult<T> parity_bit_decode(const std::vector<bool> &codeword, ParityType parity_type = ParityType::EVEN)
         {
+            ECCResult<T> res;
+            res.error_corrected = false;
+            res.errors_number = 0;
+
             if (codeword.empty())
-                return false;
+            {
+                res.error_detected = false;
+                return res;
+            }
 
             size_t L = codeword.size();
             size_t ones(0);
@@ -697,18 +715,20 @@ namespace IMD
             else
                 expected_parity_bit = (ones % 2 == 0);
 
-            return real_parity_bit == expected_parity_bit;
+            res.error_detected = (real_parity_bit != expected_parity_bit);
+            if (res.error_detected)
+                res.errors_number = 1;
+
+            std::vector<bool> data(codeword.begin(), codeword.end() - 1);
+            res.data = IMD::BIG_ENDIAN::restore_value_from_bits<T>(data.begin(), data.end());
+
+            return res;
         }
 
         // --------Triple repeat encode--------
 
-        inline std::array<bool, 3> triple_repeat(bool bit)
-        {
-            return {bit, bit, bit};
-        }
-
         template <typename T>
-        std::vector<bool> triple_encode(const T &data)
+        std::vector<bool> triple_repeat_encode(const T &data)
         {
             std::vector<bool> res;
             size_t L = bits_number<T>();
@@ -717,13 +737,53 @@ namespace IMD
             for (size_t i(0); i < L; ++i)
             {
                 bool bit = BIG_ENDIAN::get_bit(data, i);
-                auto triple = encode_triple(bit);
-                res.insert(res.end(), triple.begin(), triple.end());
+
+                res.push_back(bit);
+                res.push_back(bit);
+                res.push_back(bit);
             }
 
             return res;
         }
+        template <typename T>
+        ECCResult<T> triple_repeat_decode(const std::vector<bool> &codeword)
+        {
+            ECCResult<T> res;
+            res.error_detected = false;
+            res.error_corrected = false;
+            res.errors_number = 0;
 
+            if (codeword.size() % 3 != 0)
+            {
+                res.error_detected = true;
+                return res;
+            }
+
+            size_t L = codeword.size() / 3;
+            std::vector<bool> restored_data;
+            restored_data.reserve(L);
+
+            for (size_t i(0); i < L; ++i)
+            {
+                bool first = codeword[i * 3];
+                bool second = codeword[i * 3 + 1];
+                bool third = codeword[i * 3 + 2];
+
+                if (first != second || first != third)
+                {
+                    res.error_detected = true;
+                    res.error_corrected = true;
+                    ++res.errors_number;
+                }
+
+                size_t ones = (first ? 1 : 0) + (second ? 1 : 0) + (third ? 1 : 0);
+                bool flag = ones >= 2;
+                restored_data.push_back(flag);
+            }
+
+            res.data = BIG_ENDIAN::restore_value_from_bits<T>(restored_data.begin(), restored_data.end());
+            return res;
+        }
     }
 }
 
