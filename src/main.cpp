@@ -4,46 +4,128 @@
 
 int main()
 {
-    short val = 314;
-    IMD::BIG_ENDIAN::print_bits(val);
-    int j = 0;
-    while (j < 16)
-    {
-        std::cout << IMD::BIG_ENDIAN::get_bit(val, j);
-        ++j;
-    }
+    std::cout << "Number of bytes: " << IMD::bytes_number<short>() << std::endl;
+    std::cout << "Number of bits: " << IMD::bits_number<short>() << std::endl;
+    IMD::println_info<short>();
 
-    auto c = IMD::BIG_ENDIAN::to_bit_vector(val);
-    for (auto x : c)
-        std::cout << x << " ";
-    auto data = IMD::BIG_ENDIAN::restore_value_from_bits<short>(c.begin(), c.end());
-    std::cout << data;
+    short val = 314;
+
+    std::cout << "BIG ENDIAN" << std::endl;
+
+    IMD::BIG_ENDIAN::println_bits(val);
+    IMD::BIG_ENDIAN::println_bin_bytes(val);
+    IMD::BIG_ENDIAN::println_oct_bytes(val);
+    IMD::BIG_ENDIAN::println_dec_bytes(val);
+    IMD::BIG_ENDIAN::println_hex_bytes(val);
+
+    for (size_t i(0); i < IMD::bits_number<short>(); ++i)
+        std::cout << i << " <=> " << IMD::BIG_ENDIAN::get_bit(val, i) << std::endl;
+
+    std::cout << "Byte vector: ";
+    auto byte_vec = IMD::BIG_ENDIAN::to_byte_vector(val);
+    for (auto byte : byte_vec)
+        std::cout << (short)byte << " ";
 
     std::cout << std::endl;
+    std::cout << "Bit vector: ";
+    auto bit_vec = IMD::BIG_ENDIAN::to_bit_vector(val);
+    for (auto bit : bit_vec)
+        std::cout << (short)bit << " ";
+    std::cout << std::endl;
 
-    auto v = IMD::ECC::triple_repeat_encode(val);
-    int i(0);
-    for (auto x : v)
-    {
+    std::cout << "LITTLE ENDIAN" << std::endl;
 
+    IMD::LITTLE_ENDIAN::println_bits(val);
+    IMD::LITTLE_ENDIAN::println_bin_bytes(val);
+    IMD::LITTLE_ENDIAN::println_oct_bytes(val);
+    IMD::LITTLE_ENDIAN::println_dec_bytes(val);
+    IMD::LITTLE_ENDIAN::println_hex_bytes(val);
+
+    for (size_t i(0); i < IMD::bits_number<short>(); ++i)
+        std::cout << i << " <=> " << IMD::LITTLE_ENDIAN::get_bit(val, i) << std::endl;
+
+    std::cout << "Byte vector: ";
+    byte_vec = IMD::LITTLE_ENDIAN::to_byte_vector(val);
+    for (auto byte : byte_vec)
+        std::cout << (short)byte << " ";
+
+    std::cout << std::endl;
+    std::cout << "Bit vector: ";
+    bit_vec = IMD::LITTLE_ENDIAN::to_bit_vector(val);
+    for (auto bit : bit_vec)
+        std::cout << (short)bit << " ";
+    std::cout << std::endl;
+
+    std::cout << "ERROR CODE CORRECTING" << std::endl;
+
+    std::cout << "SOURCE DATA: ";
+    std::vector<bool> bits = {0, 1, 1, 0};
+    for (auto b : bits)
+        std::cout << b << " ";
+    std::cout << std::endl;
+
+    std::cout << "PARITY BIT" << std::endl;
+
+    auto codeword = IMD::ECC::parity_bit_encode(bits);
+    std::cout << "Codeword with no errors: ";
+    for (auto x : codeword)
         std::cout << x << " ";
-        ++i;
-        if (i % 3 == 0)
-            std::cout << std::endl;
-    }
-    v[1] = 1;
-    std::cout << "------------" << std::endl;
-    for (auto x : v)
-    {
+    std::cout << std::endl;
+    auto report = IMD::ECC::parity_bit_decode(codeword);
 
+    IMD::ECC::println_report(report);
+
+    std::cout << "Codeword with an error: ";
+    codeword[1] = 0;
+    for (auto x : codeword)
         std::cout << x << " ";
-        ++i;
-        if (i % 3 == 0)
-            std::cout << std::endl;
-    }
-    std::cout << "------------" << std::endl;
-    auto res = IMD::ECC::triple_repeat_decode<short>(v);
-    std::cout << "error_corrected: " << res.error_corrected << " error_detected: " << res.error_detected << " errors_number: " << res.errors_number << " restored_value: " << res.data;
+
+    std::cout << std::endl;
+    report = IMD::ECC::parity_bit_decode(codeword);
+
+    IMD::ECC::println_report(report);
+
+    std::cout << "TRIPLE REPEAT" << std::endl;
+    codeword = IMD::ECC::triple_repeat_encode(bits);
+    std::cout << "Codeword with no errors: ";
+    for (auto x : codeword)
+        std::cout << x << " ";
+    std::cout << std::endl;
+
+    report = IMD::ECC::triple_repeat_decode(codeword);
+
+    std::cout << "Codeword with some errors: ";
+    codeword[1] = 1;
+    codeword[5] = 0;
+    codeword[10] = 1;
+    for (auto x : codeword)
+        std::cout << x << " ";
+
+    std::cout << std::endl;
+    report = IMD::ECC::triple_repeat_decode(codeword);
+
+    IMD::ECC::println_report(report);
+
+    short R = 3;
+    std::cout << "HAMMING CODE (R=" << R << ")" << std::endl;
+
+    codeword = IMD::ECC::Hamming_encode(bits, R);
+    std::cout << "Codeword with no errors: ";
+    for (auto x : codeword)
+        std::cout << x << " ";
+    std::cout << std::endl;
+
+    report = IMD::ECC::Hamming_decode(codeword);
+
+    std::cout << "Codeword with an error: ";
+    codeword[0] = 0;
+    for (auto x : codeword)
+        std::cout << x << " ";
+
+    std::cout << std::endl;
+    report = IMD::ECC::Hamming_decode(codeword);
+
+    IMD::ECC::println_report(report);
 
     std::cin.get();
     return 0;
