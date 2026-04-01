@@ -1,6 +1,7 @@
 #include "bytesbits.h"
 #include <algorithm>
 #include <cmath>
+#include "math_solver.h"
 
 bool IMD::ECC::can_detect_errors(size_t d, size_t g)
 {
@@ -248,7 +249,7 @@ void IMD::ECC::println_report(const IMD::ECC::ECCResult &report, const char *sep
     os << std::endl;
 }
 
-std::vector<std::vector<short>> IMD::ECC::Hadamard_matrix(size_t n)
+std::vector<std::vector<short>> IMD::ECC::Hadamard_two_power_matrix(size_t n)
 {
     if (!is_two_power(n))
         throw std::invalid_argument("The argument 'n' must be a power of 2");
@@ -257,7 +258,7 @@ std::vector<std::vector<short>> IMD::ECC::Hadamard_matrix(size_t n)
         return {{1}};
 
     size_t L(n / 2);
-    auto H = IMD::ECC::Hadamard_matrix(L);
+    auto H = IMD::ECC::Hadamard_two_power_matrix(L);
     std::vector<std::vector<short>> res(2 * L, std::vector<short>(2 * L));
 
     // Fill the four quadrants
@@ -274,24 +275,138 @@ std::vector<std::vector<short>> IMD::ECC::Hadamard_matrix(size_t n)
 
     return res;
 }
+std::vector<std::vector<short>> IMD::ECC::Paley_method(size_t n)
+{
+    size_t p(n - 1);
+
+    if (!is_prime_number(p))
+        throw std::invalid_argument("The parameter 'p' must be prime");
+    if (p % 4 != 3)
+        throw std::invalid_argument("The parameter 'p' must be equal 3 (mod 4)");
+
+    std::vector<std::vector<short>> Q(p, std::vector<short>(p, 0));
+
+    for (int i(0); i < p; ++i)
+    {
+        for (int j(0); j < p; ++j)
+        {
+            if (i == j)
+                continue;
+
+            int diff((j - i) % p);
+            if (diff < 0)
+                diff += p;
+
+            Q[i][j] = is_quadratic_residue(diff, p) ? 1 : -1;
+        }
+    }
+
+    std::vector<std::vector<short>> H(n, std::vector<short>(n, 0));
+
+    for (int j(0); j < n; ++j)
+        H[0][j] = 1;
+    for (int i(0); i < n; ++i)
+        H[i][0] = 1;
+
+    for (int i(0); i < p; ++i)
+        for (int j(0); j < p; ++j)
+            H[i + 1][j + 1] = (i == j) ? -1 : Q[i][j];
+
+    return H;
+}
+
+std::vector<std::vector<short>> IMD::ECC::Paley_double_method(size_t n)
+{
+    if (n % 2 != 0)
+        throw std::invalid_argument("The argument 'n' must be even");
+
+    size_t p(n / 2 - 1);
+
+    if (!is_prime_number(p))
+        throw std::invalid_argument("The parameter 'p' must be prime");
+    if (p % 4 != 1)
+        throw std::invalid_argument("The parameter 'p' must be equal 1 (mod 4)");
+
+    std::vector<std::vector<short>> Q(p, std::vector<short>(p, 0));
+
+    for (int i(0); i < p; ++i)
+    {
+        for (int j(0); j < p; ++j)
+        {
+            if (i == j)
+                continue;
+
+            int diff((j - i) % p);
+            if (diff < 0)
+                diff += p;
+
+            Q[i][j] = is_quadratic_residue(diff, p) ? 1 : -1;
+        }
+    }
+
+    size_t m(p + 1);
+    std::vector<std::vector<short>> R(m, std::vector<short>(m, 0));
+
+    for (size_t j = 0; j < m; ++j)
+        R[0][j] = 1;
+    for (size_t i = 0; i < m; ++i)
+        R[i][0] = 1;
+
+    for (size_t i(0); i < p; ++i)
+        for (size_t j(0); j < p; ++j)
+            R[i + 1][j + 1] = (i == j) ? -1 : Q[i][j];
+
+    std::vector<std::vector<short>> H(n, std::vector<short>(n, 0));
+
+    for (size_t i(0); i < m; ++i)
+    {
+        for (size_t j(0); j < m; ++j)
+        {
+            H[i][j] = R[i][j] + (i == j ? 1 : 0); // R+E
+
+            H[i][j + m] = R[i][j] - (i == j ? 1 : 0); // R-E
+
+            H[i + m][j] = R[i][j] - (i == j ? 1 : 0); // R-E
+
+            H[i + m][j + m] = -R[i][j] - (i == j ? 1 : 0); // -R-E
+        }
+    }
+
+    return H;
+}
+
+std::vector<std::vector<short>> IMD::ECC::Hadamard_matrix(size_t n)
+{
+    if (is_prime_number(n))
+        return Hadamard_two_power_matrix(n);
+    size_t p(n - 1);
+    if (is_prime_number(p) && p % 4 == 3)
+        return Paley_method(n);
+
+    p = n / 2 - 1;
+    if (is_prime_number(p) && p % 4 == 1)
+        return Paley_double_method(n);
+
+    throw std::runtime_error("There is no algorithm for creation of a Hadamard matrix");
+}
 
 std::vector<bool> IMD::ECC::Hadamard_encode(const std::vector<bool> &data)
 {
-    size_t L(data.size());
-    size_t n(1 << (L - 1));
+    size_t K(data.size());
+    size_t n(1 << (K - 1));
 
-    bool is_invert = data.back();
+    bool is_invert(data.back());
 
     size_t row_idx(0);
-    for (size_t i(0); i < L - 1; ++i)
+    for (size_t i(0); i < K - 1; ++i)
         if (data[i])
             row_idx |= (1u << i);
 
     auto H = Hadamard_matrix(n);
-    auto row = H[row_idx];
+    const auto &row = H[row_idx];
 
     std::vector<bool> codeword(n);
-    for (size_t i = 0; i < n; ++i)
+    for (size_t i(0); i < n; ++i)
     {
         codeword[i] = (row[i] == -1); // Translation +1 -> 0, -1 -> +1
         if (is_invert)
@@ -322,7 +437,7 @@ IMD::ECC::ECCResult IMD::ECC::Hadamard_decode(const std::vector<bool> &codeword)
         corrs[i] = corr;
         corrs[i + n] = -corr;
     }
-    long max_corr(-1);
+    int max_corr(-1);
     size_t corr_idx(0);
 
     for (size_t i(0); i < 2 * n; ++i)
@@ -352,7 +467,7 @@ IMD::ECC::ECCResult IMD::ECC::Hadamard_decode(const std::vector<bool> &codeword)
         }
     }
 
-    res.error_corrected = (res.errors_number > 0 && res.errors_number <= n / 4);
+    res.error_corrected = (res.errors_number > 0 && res.errors_number <= (n - 2) / 4);
 
     res.data.resize(K, false);
     res.data[K - 1] = invert;

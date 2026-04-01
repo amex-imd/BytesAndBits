@@ -765,12 +765,14 @@ namespace IMD
 
         // --------Hadamard codes--------
 
+        std::vector<std::vector<short>> Hadamard_two_power_matrix(size_t n);
+        std::vector<std::vector<short>> Paley_method(size_t n);
+        std::vector<std::vector<short>> Paley_double_method(size_t n);
         std::vector<std::vector<short>> Hadamard_matrix(size_t n);
 
         std::vector<bool> Hadamard_encode(const std::vector<bool> &data);
 
         ECCResult Hadamard_decode(const std::vector<bool> &data);
-
     }
 }
 

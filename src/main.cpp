@@ -128,9 +128,11 @@ int main()
     IMD::ECC::println_report(report);
 
     std::cout << "Hadamard codes" << std::endl;
-    auto mrx = IMD::ECC::Hadamard_matrix(4);
 
-    for (auto x : mrx)
+    std::cout << "Hadamard matrix 12x12: " << std::endl;
+    auto mrx = IMD::ECC::Hadamard_matrix(12);
+
+    for (const auto &x : mrx)
     {
         for (auto y : x)
             std::cout << y << " ";
@@ -148,7 +150,7 @@ int main()
     IMD::ECC::println_report(report);
 
     std::cout << "Codeword with an error: ";
-    codeword[6] = 1;
+    codeword[5] = 1;
     for (auto x : codeword)
         std::cout << x << " ";
     std::cout << std::endl;
@@ -157,5 +159,6 @@ int main()
     IMD::ECC::println_report(report);
 
     std::cin.get();
+
     return 0;
 }
