@@ -93,6 +93,7 @@ int main()
     std::cout << std::endl;
 
     report = IMD::ECC::triple_repeat_decode(codeword);
+    IMD::ECC::println_report(report);
 
     std::cout << "Codeword with some errors: ";
     codeword[1] = 1;
@@ -100,10 +101,9 @@ int main()
     codeword[10] = 1;
     for (auto x : codeword)
         std::cout << x << " ";
-
     std::cout << std::endl;
-    report = IMD::ECC::triple_repeat_decode(codeword);
 
+    report = IMD::ECC::triple_repeat_decode(codeword);
     IMD::ECC::println_report(report);
 
     short R = 3;
@@ -116,15 +116,15 @@ int main()
     std::cout << std::endl;
 
     report = IMD::ECC::Hamming_decode(codeword);
+    IMD::ECC::println_report(report);
 
     std::cout << "Codeword with an error: ";
     codeword[0] = 0;
     for (auto x : codeword)
         std::cout << x << " ";
-
     std::cout << std::endl;
-    report = IMD::ECC::Hamming_decode(codeword);
 
+    report = IMD::ECC::Hamming_decode(codeword);
     IMD::ECC::println_report(report);
 
     std::cout << "Hadamard codes" << std::endl;
@@ -143,6 +143,18 @@ int main()
     for (auto x : codeword)
         std::cout << x << " ";
     std::cout << std::endl;
+
+    report = IMD::ECC::Hadamard_decode(codeword);
+    IMD::ECC::println_report(report);
+
+    std::cout << "Codeword with an error: ";
+    codeword[6] = 1;
+    for (auto x : codeword)
+        std::cout << x << " ";
+    std::cout << std::endl;
+
+    report = IMD::ECC::Hadamard_decode(codeword);
+    IMD::ECC::println_report(report);
 
     std::cin.get();
     return 0;

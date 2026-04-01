@@ -1,5 +1,6 @@
 #include "bytesbits.h"
 #include <algorithm>
+#include <cmath>
 
 bool IMD::ECC::can_detect_errors(size_t d, size_t g)
 {
@@ -276,10 +277,9 @@ std::vector<std::vector<short>> IMD::ECC::Hadamard_matrix(size_t n)
 
 std::vector<bool> IMD::ECC::Hadamard_encode(const std::vector<bool> &data)
 {
-    size_t K(data.size());
-    size_t n(1 << (K - 1));
-
     size_t L(data.size());
+    size_t n(1 << (L - 1));
+
     bool is_invert = data.back();
 
     size_t row_idx(0);
@@ -298,4 +298,67 @@ std::vector<bool> IMD::ECC::Hadamard_encode(const std::vector<bool> &data)
             codeword[i] = !codeword[i];
     }
     return codeword;
+}
+
+IMD::ECC::ECCResult IMD::ECC::Hadamard_decode(const std::vector<bool> &codeword)
+{
+    ECCResult res;
+    res.error_detected = false;
+    res.error_corrected = false;
+    res.errors_number = 0;
+
+    size_t n(codeword.size());
+    size_t K(1 + log2(n));
+
+    auto H = Hadamard_matrix(n);
+    std::vector<int> corrs(2 * n);
+
+    for (size_t i(0); i < n; ++i)
+    {
+        int corr(0);
+        for (size_t k(0); k < n; ++k)
+            corr += (codeword[k] ? -1 : 1) * H[i][k]; // Translation 0 -> +1, 1 -> -1
+
+        corrs[i] = corr;
+        corrs[i + n] = -corr;
+    }
+    long max_corr(-1);
+    size_t corr_idx(0);
+
+    for (size_t i(0); i < 2 * n; ++i)
+    {
+        int tmp = std::abs(corrs[i]);
+        if (tmp > max_corr)
+        {
+            max_corr = tmp;
+            corr_idx = i;
+        }
+    }
+
+    int sign = (corrs[corr_idx] > 0 ? 1 : -1);
+    bool invert(corr_idx >= n);
+    size_t row_idx(corr_idx % n);
+
+    std::vector<int> signal(n);
+    for (size_t i(0); i < n; ++i)
+        signal[i] = sign * H[row_idx][i];
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        if ((codeword[i] ? -1 : 1) != signal[i])
+        {
+            res.error_detected = true;
+            ++res.errors_number;
+        }
+    }
+
+    res.error_corrected = (res.errors_number > 0 && res.errors_number <= n / 4);
+
+    res.data.resize(K, false);
+    res.data[K - 1] = invert;
+    for (size_t i(0); i < K - 1; ++i)
+        if (row_idx & (1u << i))
+            res.data[i] = true;
+
+    return res;
 }

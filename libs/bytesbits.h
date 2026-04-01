@@ -769,6 +769,8 @@ namespace IMD
 
         std::vector<bool> Hadamard_encode(const std::vector<bool> &data);
 
+        ECCResult Hadamard_decode(const std::vector<bool> &data);
+
     }
 }
 
