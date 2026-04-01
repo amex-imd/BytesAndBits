@@ -1,4 +1,5 @@
 #include "bytesbits.h"
+#include <algorithm>
 
 bool IMD::ECC::can_detect_errors(size_t d, size_t g)
 {
@@ -244,4 +245,57 @@ void IMD::ECC::println_report(const IMD::ECC::ECCResult &report, const char *sep
 {
     print_report(report, sep, os);
     os << std::endl;
+}
+
+std::vector<std::vector<short>> IMD::ECC::Hadamard_matrix(size_t n)
+{
+    if (!is_two_power(n))
+        throw std::invalid_argument("The argument 'n' must be a power of 2");
+
+    if (n == 1)
+        return {{1}};
+
+    size_t L(n / 2);
+    auto H = IMD::ECC::Hadamard_matrix(L);
+    std::vector<std::vector<short>> res(2 * L, std::vector<short>(2 * L));
+
+    // Fill the four quadrants
+    for (size_t i(0); i < L; ++i)
+    {
+        for (size_t j(0); j < L; ++j)
+        {
+            res[i][j] = H[i][j];          // top-left
+            res[i][L + j] = H[i][j];      // top-right
+            res[L + i][j] = H[i][j];      // bottom-left
+            res[L + i][L + j] = -H[i][j]; // bottom-right
+        }
+    }
+
+    return res;
+}
+
+std::vector<bool> IMD::ECC::Hadamard_encode(const std::vector<bool> &data)
+{
+    size_t K(data.size());
+    size_t n(1 << (K - 1));
+
+    size_t L(data.size());
+    bool is_invert = data.back();
+
+    size_t row_idx(0);
+    for (size_t i(0); i < L - 1; ++i)
+        if (data[i])
+            row_idx |= (1u << i);
+
+    auto H = Hadamard_matrix(n);
+    auto row = H[row_idx];
+
+    std::vector<bool> codeword(n);
+    for (size_t i = 0; i < n; ++i)
+    {
+        codeword[i] = (row[i] == -1); // Translation +1 -> 0, -1 -> +1
+        if (is_invert)
+            codeword[i] = !codeword[i];
+    }
+    return codeword;
 }

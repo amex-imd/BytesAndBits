@@ -127,6 +127,23 @@ int main()
 
     IMD::ECC::println_report(report);
 
+    std::cout << "Hadamard codes" << std::endl;
+    auto mrx = IMD::ECC::Hadamard_matrix(4);
+
+    for (auto x : mrx)
+    {
+        for (auto y : x)
+            std::cout << y << " ";
+        std::cout << std::endl;
+    }
+
+    codeword = IMD::ECC::Hadamard_encode(bits);
+
+    std::cout << "Codeword with no errors: ";
+    for (auto x : codeword)
+        std::cout << x << " ";
+    std::cout << std::endl;
+
     std::cin.get();
     return 0;
 }

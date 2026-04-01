@@ -761,6 +761,14 @@ namespace IMD
 
         ECCResult Hamming_decode(const std::vector<bool> &codeword);
 
+        // --------Reed-Muller codes--------
+
+        // --------Hadamard codes--------
+
+        std::vector<std::vector<short>> Hadamard_matrix(size_t n);
+
+        std::vector<bool> Hadamard_encode(const std::vector<bool> &data);
+
     }
 }
 
