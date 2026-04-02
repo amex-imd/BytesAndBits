@@ -4,6 +4,14 @@
 
 int main()
 {
+    std::vector<bool> b = {1, 0, 1, 1, 0, 1, 0};
+    auto c = IMD::ECC::Reed_Muller_encode(b, 2, 3);
+    for (auto x : c)
+        std::cout << x << " ";
+
+    std::cin.get();
+    return 0;
+
     std::cout << "Number of bytes: " << IMD::bytes_number<short>() << std::endl;
     std::cout << "Number of bits: " << IMD::bits_number<short>() << std::endl;
     IMD::println_info<short>();
@@ -126,6 +134,19 @@ int main()
 
     report = IMD::ECC::Hamming_decode(codeword);
     IMD::ECC::println_report(report);
+
+    std::cout << "Reed-Muller codes" << std::endl;
+
+    std::cout << "The monomial for RM(3,4): " << std::endl;
+
+    auto monomial = IMD::ECC::monomials(3, 4);
+    for (const auto &x : monomial)
+    {
+        for (auto y : x)
+            std::cout << y;
+        std::cout << " ";
+    }
+    std::cout << std::endl;
 
     std::cout << "Hadamard codes" << std::endl;
 

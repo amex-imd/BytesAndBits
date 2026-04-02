@@ -477,3 +477,72 @@ IMD::ECC::ECCResult IMD::ECC::Hadamard_decode(const std::vector<bool> &codeword)
 
     return res;
 }
+
+std::vector<std::vector<size_t>> IMD::ECC::monomials(size_t r, size_t m)
+{
+    std::vector<std::vector<size_t>> res{};
+
+    for (size_t rr(0); rr <= r; ++rr)
+    {
+
+        if (rr == 0)
+        {
+            res.push_back({});
+            continue;
+        }
+
+        std::vector<bool> terms(m, false);
+        std::fill(terms.begin(), terms.begin() + rr, true);
+
+        do
+        {
+            std::vector<size_t> combination;
+            for (size_t mm(0); mm < m; ++mm)
+                if (terms[mm])
+                    combination.push_back(mm);
+
+            res.push_back(combination);
+        } while (std::prev_permutation(terms.begin(), terms.end()));
+    }
+    return res;
+}
+
+std::vector<bool> IMD::ECC::Reed_Muller_encode(const std::vector<bool> &data, size_t r, size_t m)
+{
+    auto monomial = monomials(r, m);
+
+    size_t N(1 << m);
+    size_t K = monomial.size();
+
+    std::vector<bool> res(N, false);
+
+    for (size_t t(0); t < N; ++t)
+    {
+        bool outcome(false);
+
+        for (size_t kk(0); kk < K; ++kk)
+        {
+            if (!data[kk])
+                continue;
+
+            size_t L(monomial[kk].size());
+            bool term(true);
+
+            for (size_t i(0); i < L; ++i)
+            {
+                size_t idx = monomial[kk][i];
+                if (!((t >> (m - idx - 1)) & 1))
+                {
+                    term = false;
+                    break;
+                }
+            }
+
+            if (term)
+                outcome = !outcome; // XOR
+        }
+
+        res[t] = outcome;
+    }
+    return res;
+}
