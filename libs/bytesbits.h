@@ -3,13 +3,11 @@
 
 #include <iostream>
 #include <iomanip>
-#include <algorithm>
-#include <numeric>
 #include <vector>
+#include <cstddef>
+#include <numeric>
 #include <tuple>
 #include <string>
-#include <cstddef>
-#include <typeinfo>
 
 namespace IMD
 {
@@ -780,6 +778,10 @@ namespace IMD
 
         ECCResult Hadamard_decode(const std::vector<bool> &data);
     }
+    // --------Extra functions--------
+
+    bool is_prime_number(long long num);
+    bool is_quadratic_residue(long long a, long long p);
 }
 
 #endif
