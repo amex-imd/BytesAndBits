@@ -4,14 +4,6 @@
 
 int main()
 {
-    std::vector<bool> b = {1, 0, 1, 1, 0, 1, 0};
-    auto c = IMD::ECC::Reed_Muller_encode(b, 2, 3);
-    for (auto x : c)
-        std::cout << x << " ";
-
-    std::cin.get();
-    return 0;
-
     std::cout << "Number of bytes: " << IMD::bytes_number<short>() << std::endl;
     std::cout << "Number of bits: " << IMD::bits_number<short>() << std::endl;
     IMD::println_info<short>();
@@ -147,6 +139,25 @@ int main()
         std::cout << " ";
     }
     std::cout << std::endl;
+
+    codeword = IMD::ECC::Reed_Muller_encode(bits, 1, 3);
+
+    std::cout << "Codeword with no errors: ";
+    for (auto x : codeword)
+        std::cout << x << " ";
+    std::cout << std::endl;
+
+    report = IMD::ECC::Reed_Muller_decode(codeword, 1, 3);
+    IMD::ECC::println_report(report);
+
+    std::cout << "Codeword with an error: ";
+    codeword[2] = 0;
+    for (auto x : codeword)
+        std::cout << x << " ";
+    std::cout << std::endl;
+
+    report = IMD::ECC::Reed_Muller_decode(codeword, 1, 3);
+    IMD::ECC::println_report(report);
 
     std::cout << "Hadamard codes" << std::endl;
 

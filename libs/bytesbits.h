@@ -767,6 +767,8 @@ namespace IMD
 
         std::vector<bool> Reed_Muller_encode(const std::vector<bool> &data, size_t r, size_t m);
 
+        ECCResult Reed_Muller_decode(const std::vector<bool> &codeword, size_t r, size_t m);
+
         // --------Hadamard codes--------
 
         std::vector<std::vector<short>> Hadamard_two_power_matrix(size_t n);

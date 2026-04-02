@@ -1,6 +1,7 @@
 #include "bytesbits.h"
 #include <algorithm>
 #include <cmath>
+#include <utility>
 #include "math_solver.h"
 
 bool IMD::ECC::can_detect_errors(size_t d, size_t g)
@@ -378,7 +379,7 @@ std::vector<std::vector<short>> IMD::ECC::Paley_double_method(size_t n)
 std::vector<std::vector<short>> IMD::ECC::Hadamard_matrix(size_t n)
 {
     if (is_prime_number(n))
-        return Hadamard_two_power_matrix(n);
+        return Hadamard_matrix(n);
     size_t p(n - 1);
     if (is_prime_number(p) && p % 4 == 3)
         return Paley_method(n);
@@ -387,7 +388,7 @@ std::vector<std::vector<short>> IMD::ECC::Hadamard_matrix(size_t n)
     if (is_prime_number(p) && p % 4 == 1)
         return Paley_double_method(n);
 
-    throw std::runtime_error("There is no algorithm for creation of a Hadamard matrix");
+    throw std::runtime_error("There is no algorithm for creation of a Hadamard AArix");
 }
 
 std::vector<bool> IMD::ECC::Hadamard_encode(const std::vector<bool> &data)
@@ -484,25 +485,18 @@ std::vector<std::vector<size_t>> IMD::ECC::monomials(size_t r, size_t m)
 
     for (size_t rr(0); rr <= r; ++rr)
     {
-
-        if (rr == 0)
-        {
-            res.push_back({});
-            continue;
-        }
-
-        std::vector<bool> terms(m, false);
-        std::fill(terms.begin(), terms.begin() + rr, true);
+        std::vector<bool> term(m, false);
+        std::fill(term.begin(), term.begin() + rr, true);
 
         do
         {
             std::vector<size_t> combination;
             for (size_t mm(0); mm < m; ++mm)
-                if (terms[mm])
+                if (term[mm])
                     combination.push_back(mm);
 
             res.push_back(combination);
-        } while (std::prev_permutation(terms.begin(), terms.end()));
+        } while (std::prev_permutation(term.begin(), term.end()));
     }
     return res;
 }
@@ -544,5 +538,56 @@ std::vector<bool> IMD::ECC::Reed_Muller_encode(const std::vector<bool> &data, si
 
         res[t] = outcome;
     }
+    return res;
+}
+
+IMD::ECC::ECCResult IMD::ECC::Reed_Muller_decode(const std::vector<bool> &codeword, size_t r, size_t m)
+{
+    ECCResult res;
+    size_t N(1 << m);
+
+    auto monomial = monomials(r, m);
+    size_t K(monomial.size());
+
+    if (codeword.size() != N)
+    {
+        res.error_detected = true;
+        return res;
+    }
+
+    size_t d_min(1 << (m - r));
+    size_t t((d_min - 1) / 2);
+
+    // Sequence of all possible bit vectors
+    std::vector<bool> best_data;
+    size_t best_errors(N + 1);
+
+    size_t total(1u << K);
+
+    for (size_t tt(0); tt < total; ++tt)
+    {
+        std::vector<bool> data(K);
+        for (size_t i(0); i < K; ++i)
+            data[i] = (tt >> i) & 1;
+
+        auto code = Reed_Muller_encode(data, r, m);
+
+        size_t errors = Haming_distance(code, codeword);
+
+        if (errors < best_errors)
+        {
+            best_errors = errors;
+            best_data = data;
+
+            if (errors <= t)
+                break;
+        }
+    }
+
+    res.data = best_data;
+    res.errors_number = best_errors;
+    res.error_detected = (best_errors > 0);
+    res.error_corrected = (best_errors > 0 && best_errors <= t);
+
     return res;
 }
